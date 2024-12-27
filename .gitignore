@@ -1,0 +1,15 @@
+Thumbs.db*
+.DS_Store*
+node_modules
+.idea
+target
+*.iml
+.gradle
+src/
+application.properties
+build.gradle
+gradlew
+gradlew.bat
+settings.gradle
+gradle
+artifacts
