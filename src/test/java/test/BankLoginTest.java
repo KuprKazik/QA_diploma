@@ -215,17 +215,6 @@ public class BankLoginTest {
         String enteredValue = cardNumber.getValue();
         Assertions.assertTrue(enteredValue.isEmpty());
     }
-    @Test
-    void testNotAccepted01_2025PaymentForm() {
-        LoginPage.paymentForm();
-        cardNumber.setValue(DataHelper.getValidCardNumber());
-        month.setValue(DataHelper.getMonth01_2025());
-        year.setValue(DataHelper.getYear01_2025());
-        owner.setValue(DataHelper.getValidOwner());
-        codeCVC.setValue(DataHelper.getValidCVCCode());
-        loginButton.click();
-        LoginPage.getErrorMonth();
-    }
 
     @Test
     void testNo00MonthAllowedPaymentForm() {
@@ -269,6 +258,17 @@ public class BankLoginTest {
         DataHelper.getNoLettersAndCharactersInMonth();
         String enteredValue = month.getValue();
         Assertions.assertTrue(enteredValue.isEmpty());
+    }
+    @Test
+    void testNotAccepted01_2025PaymentForm() {
+        LoginPage.paymentForm();
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.getMonth01_2025());
+        year.setValue(DataHelper.getYear01_2025());
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
+        loginButton.click();
+        LoginPage.getErrorMonth();
     }
 
     @Test
@@ -436,17 +436,6 @@ public class BankLoginTest {
         String enteredValue = cardNumber.getValue();
         Assertions.assertTrue(enteredValue.isEmpty());
     }
-    @Test
-    void testNotAccepted01_2025CreditForm() {
-        LoginPage.creditForm();
-        cardNumber.setValue(DataHelper.getValidCardNumber());
-        month.setValue(DataHelper.getMonth01_2025());
-        year.setValue(DataHelper.getYear01_2025());
-        owner.setValue(DataHelper.getValidOwner());
-        codeCVC.setValue(DataHelper.getValidCVCCode());
-        loginButton.click();
-        LoginPage.getErrorMonth();
-    }
 
     @Test
     void testNo00MonthAllowedCreditForm() {
@@ -490,6 +479,17 @@ public class BankLoginTest {
         DataHelper.getNoLettersAndCharactersInMonth();
         String enteredValue = month.getValue();
         Assertions.assertTrue(enteredValue.isEmpty());
+    }
+    @Test
+    void testNotAccepted01_2025CreditForm() {
+        LoginPage.creditForm();
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.getMonth01_2025());
+        year.setValue(DataHelper.getYear01_2025());
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
+        loginButton.click();
+        LoginPage.getErrorMonth();
     }
 
     @Test
