@@ -1,12 +1,14 @@
 package data;
 
+import lombok.SneakyThrows;
 import java.sql.*;
 
 public class DataSQL {
 
     public static class MySQL {
 
-        public static String getStatusFromPaymentTable(String status) throws SQLException {
+        @SneakyThrows
+        public static String getStatusFromPaymentTable(String status) {
 
             String url = "jdbc:mysql://localhost:3306/app";
             String user = "app";
@@ -28,7 +30,8 @@ public class DataSQL {
             }
         }
 
-        public static String getStatusFromCreditTable(String status) throws SQLException {
+        @SneakyThrows
+        public static String getStatusFromCreditTable(String status) {
 
             String url = "jdbc:mysql://localhost:3306/app";
             String user = "app";
@@ -53,11 +56,12 @@ public class DataSQL {
 
     public static class PostgreSQL {
 
-        public static String getStatusFromPaymentTable(String status) throws SQLException {
+        @SneakyThrows
+        public static String getStatusFromPaymentTable(String status) {
 
-            String url = "jdbc:postgresql://localhost:5432/postgres";
-            String user = "postgres";
-            String password = "password";
+            String url = "jdbc:postgresql://localhost:5432/app";
+            String user = "app";
+            String password = "pass";
 
             String selectQuery = "SELECT status FROM payment_entity WHERE status = ?";
 
@@ -75,11 +79,12 @@ public class DataSQL {
             }
         }
 
-        public static String getStatusFromCreditTable(String status) throws SQLException {
+        @SneakyThrows
+        public static String getStatusFromCreditTable(String status) {
 
-            String url = "jdbc:postgresql://localhost:5432/postgres";
-            String user = "postgres";
-            String password = "password";
+            String url = "jdbc:postgresql://localhost:5432/app";
+            String user = "app";
+            String password = "pass";
 
             String selectQuery = "SELECT status FROM credit_request_entity WHERE status = ?";
 
@@ -104,9 +109,9 @@ public class DataSQL {
         private static final String MYSQL_USER = "app";
         private static final String MYSQL_PASSWORD = "pass";
 
-        private static final String POSTGRES_URL = "jdbc:postgresql://localhost:5432/postgres";
-        private static final String POSTGRES_USER = "postgres";
-        private static final String POSTGRES_PASSWORD = "password";
+        private static final String POSTGRES_URL = "jdbc:postgresql://localhost:5432/app";
+        private static final String POSTGRES_USER = "app";
+        private static final String POSTGRES_PASSWORD = "pass";
 
 
         private static void deleteDataFromTable(Connection conn, String tableName) throws SQLException {
@@ -119,13 +124,15 @@ public class DataSQL {
             deleteDataFromTable(conn, "credit_request_entity");
         }
 
-        public static void deleteAllDataFromMySQL() throws SQLException {
+        @SneakyThrows
+        public static void deleteAllDataFromMySQL() {
             try (Connection conn = DriverManager.getConnection(MYSQL_URL, MYSQL_USER, MYSQL_PASSWORD)) {
                 deleteAllData(conn);
             }
         }
 
-        public static void deleteAllDataFromPostgres() throws SQLException {
+        @SneakyThrows
+        public static void deleteAllDataFromPostgres() {
             try (Connection conn = DriverManager.getConnection(POSTGRES_URL, POSTGRES_USER, POSTGRES_PASSWORD)) {
                 deleteAllData(conn);
             }

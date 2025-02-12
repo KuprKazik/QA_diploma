@@ -1,19 +1,14 @@
 package test;
 
-import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.logevents.SelenideLogger;
+import data.DataHelper;
 import data.DataSQL;
 import io.qameta.allure.selenide.AllureSelenide;
 import org.junit.jupiter.api.*;
 import page.LoginPage;
 import org.junit.jupiter.api.Test;
 
-import java.sql.*;
-import java.time.Duration;
-
-import static com.codeborne.selenide.Condition.*;
-import static com.codeborne.selenide.Selenide.$;
 import static com.codeborne.selenide.Selenide.open;
 import static data.DataSQL.DatabaseCleaner.deleteAllDataFromMySQL;
 import static data.DataSQL.DatabaseCleaner.deleteAllDataFromPostgres;
@@ -24,14 +19,14 @@ public class BankLoginTest {
 
 
     @BeforeAll
-    static void setUpAll() throws SQLException {
+    static void setUpAll() {
         deleteAllDataFromMySQL();
         deleteAllDataFromPostgres();
         SelenideLogger.addListener("allure", new AllureSelenide());
     }
 
     @AfterAll
-    static void tearDownAll() throws SQLException {
+    static void tearDownAll() {
         deleteAllDataFromMySQL();
         deleteAllDataFromPostgres();
         SelenideLogger.removeListener("allure");
@@ -42,146 +37,138 @@ public class BankLoginTest {
 
         Configuration.browser = "chrome";
         open("http://localhost:8080");
-        assertTrue($("h2").isDisplayed(), "Путешествие дня");
-        assertTrue($("div.Order_cardPreview__47B2k").isDisplayed());
-        assertTrue($("button:nth-child(3)").isDisplayed(), "Купить");
-        assertTrue($("#root > div > button.button.button_view_extra.button_size_m.button_theme_alfa-on-white").isDisplayed(), "Купить в кредит");
+        assertTrue(pageTitle.isDisplayed(), "Путешествие дня");
+        assertTrue(pageImage.isDisplayed());
+        assertTrue(firstButton.isDisplayed(), "Купить");
+        assertTrue(secondButton.isDisplayed(), "Купить в кредит");
     }
 
-    //Проверка позитивных сценариев
+    //Проверка позитивных сценариев и записи статусов в базы данных
 
     @Test
-    void testLoginSuccessfulPaymentForm() {
+    void testLoginSuccessfulPaymentFormMySQL() {
         LoginPage.paymentForm();
-        cardNumber.setValue("4444 4444 4444 4441");
-        month.setValue("12");
-        year.setValue("25");
-        owner.setValue("IVAN PETROV");
-        codeCVC.setValue("123");
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
         loginButton.click();
-        confirmationMessage.shouldBe(visible,Duration.ofSeconds(15)).shouldHave(exactText("Операция одобрена Банком."));
-    }
-    @Test
-    void testLoginSuccessfulCreditForm() {
-        LoginPage.creditForm();
-        cardNumber.setValue("4444 4444 4444 4441");
-        month.setValue("12");
-        year.setValue("25");
-        owner.setValue("IVAN PETROV");
-        codeCVC.setValue("123");
-        loginButton.click();
-        confirmationMessage.shouldBe(visible, Duration.ofSeconds(15)).shouldHave(exactText("Операция одобрена Банком."));
-    }
+        LoginPage.getConfirmationMessage();
 
+        String retrievedStatus = DataSQL.MySQL.getStatusFromPaymentTable("APPROVED");
+        assertNotNull(retrievedStatus);
+        assertEquals("APPROVED", retrievedStatus);
+        }
     @Test
-    void testLoginUnsuccessfulPaymentForm() {
+    void testLoginSuccessfulPaymentFormPostgres() {
         LoginPage.paymentForm();
-        cardNumber.setValue("4444 4444 4444 4442");
-        month.setValue("12");
-        year.setValue("25");
-        owner.setValue("IVAN PETROV");
-        codeCVC.setValue("123");
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
         loginButton.click();
-        errorMessage.shouldBe(visible, Duration.ofSeconds(15)).shouldHave(exactText("Ошибка! Банк отказал в проведении операции."));
+        LoginPage.getConfirmationMessage();
+
+        String retrievedStatus = DataSQL.PostgreSQL.getStatusFromPaymentTable("APPROVED");
+        assertNotNull(retrievedStatus);
+        assertEquals("APPROVED", retrievedStatus);
     }
+
+
     @Test
-    void testLoginUnsuccessfulCreditForm() {
+    void testLoginSuccessfulCreditFormMySQL() {
         LoginPage.creditForm();
-        cardNumber.setValue("4444 4444 4444 4442");
-        month.setValue("12");
-        year.setValue("25");
-        owner.setValue("IVAN PETROV");
-        codeCVC.setValue("123");
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
         loginButton.click();
-        errorMessage.shouldBe(visible, Duration.ofSeconds(15)).shouldHave(exactText("Ошибка! Банк отказал в проведении операции."));
-    }
+        LoginPage.getConfirmationMessage();
 
-    // Проверка записи статусов в базы данных
-
-    @Test
-    public void testCheckApprovedStatusInMySQLFromPaymentForm() {
-        try {
-            String retrievedStatus = DataSQL.MySQL.getStatusFromPaymentTable("APPROVED");
-            assertNotNull(retrievedStatus);
-            assertEquals("APPROVED", retrievedStatus);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        String retrievedStatus = DataSQL.MySQL.getStatusFromCreditTable("APPROVED");
+        assertNotNull(retrievedStatus);
+        assertEquals("APPROVED", retrievedStatus);
     }
     @Test
-    public void testCheckApprovedStatusInPostgresFromPaymentForm() {
-        try {
-            String retrievedStatus = DataSQL.PostgreSQL.getStatusFromPaymentTable("APPROVED");
-            assertNotNull(retrievedStatus);
-            assertEquals("APPROVED", retrievedStatus);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    void testLoginSuccessfulCreditFormPostgres() {
+        LoginPage.creditForm();
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
+        loginButton.click();
+        LoginPage.getConfirmationMessage();
+
+        String retrievedStatus = DataSQL.PostgreSQL.getStatusFromCreditTable("APPROVED");
+        assertNotNull(retrievedStatus);
+        assertEquals("APPROVED", retrievedStatus);
     }
 
     @Test
-    public void testCheckApprovedStatusInMySQLFromCreditForm() {
-        try {
-            String retrievedStatus = DataSQL.MySQL.getStatusFromCreditTable("APPROVED");
-            assertNotNull(retrievedStatus);
-            assertEquals("APPROVED", retrievedStatus);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    void testLoginUnsuccessfulPaymentFormMySQL() {
+        LoginPage.paymentForm();
+        cardNumber.setValue(DataHelper.getInvalidCardNumber());
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
+        loginButton.click();
+        LoginPage.getErrorMessage();
+
+        String retrievedStatus = DataSQL.MySQL.getStatusFromPaymentTable("DECLINED");
+        assertNotNull(retrievedStatus);
+        assertEquals("DECLINED", retrievedStatus);
     }
     @Test
-    public void testCheckApprovedStatusInPostgresFromCreditForm() {
-        try {
-            String retrievedStatus = DataSQL.PostgreSQL.getStatusFromCreditTable("APPROVED");
-            assertNotNull(retrievedStatus);
-            assertEquals("APPROVED", retrievedStatus);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    void testLoginUnsuccessfulPaymentFormPostgres() {
+        LoginPage.paymentForm();
+        cardNumber.setValue(DataHelper.getInvalidCardNumber());
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
+        loginButton.click();
+        LoginPage.getErrorMessage();
+
+        String retrievedStatus = DataSQL.PostgreSQL.getStatusFromPaymentTable("DECLINED");
+        assertNotNull(retrievedStatus);
+        assertEquals("DECLINED", retrievedStatus);
     }
 
     @Test
-    public void testCheckDeclinedStatusInMySQLFromPaymentForm() {
-        try {
-            String retrievedStatus = DataSQL.MySQL.getStatusFromPaymentTable("DECLINED");
-            assertNotNull(retrievedStatus);
-            assertEquals("DECLINED", retrievedStatus);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-    @Test
-    public void testCheckDeclinedStatusInPostgresFromPaymentForm() {
-        try {
-            String retrievedStatus = DataSQL.PostgreSQL.getStatusFromPaymentTable("DECLINED");
-            assertNotNull(retrievedStatus);
-            assertEquals("DECLINED", retrievedStatus);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+    void testLoginUnsuccessfulCreditFormMySQL() {
+        LoginPage.creditForm();
+        cardNumber.setValue(DataHelper.getInvalidCardNumber());
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
+        loginButton.click();
+        LoginPage.getErrorMessage();
 
-    @Test
-    public void testCheckDeclinedStatusInMySQLFromCreditForm() {
-        try {
-            String retrievedStatus = DataSQL.MySQL.getStatusFromCreditTable("DECLINED");
-            assertNotNull(retrievedStatus);
-            assertEquals("DECLINED", retrievedStatus);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        String retrievedStatus = DataSQL.MySQL.getStatusFromCreditTable("DECLINED");
+        assertNotNull(retrievedStatus);
+        assertEquals("DECLINED", retrievedStatus);
     }
     @Test
-    public void testCheckDeclinedStatusInPostgresFromCreditForm() {
-        try {
-            String retrievedStatus = DataSQL.PostgreSQL.getStatusFromCreditTable("DECLINED");
-            assertNotNull(retrievedStatus);
-            assertEquals("DECLINED", retrievedStatus);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+    void testLoginUnsuccessfulCreditFormPostgres() {
+        LoginPage.creditForm();
+        cardNumber.setValue(DataHelper.getInvalidCardNumber());
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
+        loginButton.click();
+        LoginPage.getErrorMessage();
 
+        String retrievedStatus = DataSQL.PostgreSQL.getStatusFromCreditTable("DECLINED");
+        assertNotNull(retrievedStatus);
+        assertEquals("DECLINED", retrievedStatus);
+    }
 
 
     //Заполнение невалидными данными раздела "Оплата по карте"
@@ -191,22 +178,21 @@ public class BankLoginTest {
     @Test
     void testNo15FiguresAllowedInCardNumberPaymentForm() {
         LoginPage.paymentForm();
-        cardNumber.setValue("4444 4444 4444 444");
-        month.setValue("12");
-        year.setValue("25");
-        owner.setValue("IVAN PETROV");
-        codeCVC.setValue("123");
+        cardNumber.setValue(DataHelper.get15FiguresCardNumber());
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
         loginButton.click();
-        errorCardNumber.shouldHave(exactText("Неверный формат")).shouldBe(visible);
+        LoginPage.getErrorCardNumber();
     }
 
     @Test
     void testNo17FiguresAllowedInCardNumberPaymentForm() {
         LoginPage.paymentForm();
-        cardNumber.setValue("1111 1111 1111 1111");
-        cardNumber.append("1");
-        String enteredValue = cardNumber.getValue().replaceAll("\\s", "").trim();
-        assert (enteredValue).length() == 16;
+        DataHelper.get17FiguresCardNumber();
+        String enteredValue = cardNumber.getValue();
+        Assertions.assertTrue(enteredValue.length() == 19);
     }
 
 
@@ -214,106 +200,113 @@ public class BankLoginTest {
     void testNoBlankCardNumberPaymentForm() {
         LoginPage.paymentForm();
         cardNumber.setValue("");
-        month.setValue("12");
-        year.setValue("25");
-        owner.setValue("IVAN PETROV");
-        codeCVC.setValue("123");
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
         loginButton.click();
-        errorCardNumber.shouldHave(exactText("Неверный формат")).shouldBe(visible);
-
+        LoginPage.getErrorCardNumber();
     }
 
     @Test
     void testNoLettersOrSpecialCharactersInCardNumberPaymentForm() {
         LoginPage.paymentForm();
-        cardNumber.setValue("1234ABCD@#$5678");
-        cardNumber.shouldHave(Condition.value("1234 5678"));
-        String enteredValue = cardNumber.getValue().replaceAll("\\s", "").trim();
-        Assertions.assertTrue(enteredValue.matches("\\d{8}"));
+        DataHelper.getNoLettersAndCharactersInCardNumber();
+        String enteredValue = cardNumber.getValue();
+        Assertions.assertTrue(enteredValue.isEmpty());
+    }
+    @Test
+    void testNotAccepted01_2025PaymentForm() {
+        LoginPage.paymentForm();
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.getMonth01_2025());
+        year.setValue(DataHelper.getYear01_2025());
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
+        loginButton.click();
+        LoginPage.getErrorMonth();
     }
 
     @Test
     void testNo00MonthAllowedPaymentForm() {
         LoginPage.paymentForm();
-        cardNumber.setValue("4444 4444 4444 4441");
-        month.setValue("00");
-        year.setValue("25");
-        owner.setValue("IVAN PETROV");
-        codeCVC.setValue("123");
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.get00Month());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
         loginButton.click();
-        errorMonth.shouldHave(exactText("Неверно указан срок действия карты")).shouldBe(visible);
+        LoginPage.getErrorMonth();
     }
 
     @Test
     void testNo13MonthAllowedPaymentForm() {
         LoginPage.paymentForm();
-        cardNumber.setValue("4444 4444 4444 4441");
-        month.setValue("13");
-        year.setValue("25");
-        owner.setValue("IVAN PETROV");
-        codeCVC.setValue("123");
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(String.valueOf(DataHelper.getInvalidMonth()));
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
         loginButton.click();
-        errorMonth.shouldHave(exactText("Неверно указан срок действия карты")).shouldBe(visible);
+        LoginPage.getErrorMonth();
     }
 
     @Test
     void testNoBlankMonthPaymentForm() {
         LoginPage.paymentForm();
-        cardNumber.setValue("4444 4444 4444 4441");
+        cardNumber.setValue(DataHelper.getValidCardNumber());
         month.setValue("");
-        year.setValue("25");
-        owner.setValue("IVAN PETROV");
-        codeCVC.setValue("123");
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
         loginButton.click();
-        errorMonth.shouldHave(exactText("Неверный формат")).shouldBe(visible);
+        LoginPage.getErrorMonth2();
     }
 
     @Test
     void testNoLettersOrSpecialCharactersInMonthPaymentForm() {
         LoginPage.paymentForm();
-        month.setValue("1D@B$2");
-        month.shouldHave(Condition.value("12"));
+        DataHelper.getNoLettersAndCharactersInMonth();
         String enteredValue = month.getValue();
-        Assertions.assertTrue(enteredValue.matches("\\d{2}"));
+        Assertions.assertTrue(enteredValue.isEmpty());
     }
 
     @Test
     void testInvalidYearPaymentForm() {
         LoginPage.paymentForm();
-        cardNumber.setValue("4444 4444 4444 4441");
-        month.setValue("12");
-        year.setValue("24");
-        owner.setValue("IVAN PETROV");
-        codeCVC.setValue("123");
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(DataHelper.getInvalidYear());
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
         loginButton.click();
-        errorYear.shouldHave(exactText("Истёк срок действия карты")).shouldBe(visible);
+        LoginPage.getErrorYear1();
     }
 
     @Test
     void testNoBlankYearPaymentForm() {
         LoginPage.paymentForm();
-        cardNumber.setValue("4444 4444 4444 4441");
-        month.setValue("12");
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.getValidMonth());
         year.setValue("");
-        owner.setValue("IVAN PETROV");
-        codeCVC.setValue("123");
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
         loginButton.click();
-        errorYear.shouldHave(exactText("Неверный формат")).shouldBe(visible);
+        LoginPage.getErrorYear2();
     }
 
     @Test
     void testNoLettersOrSpecialCharactersInYearPaymentForm() {
         LoginPage.paymentForm();
-        year.setValue("2D@B$5");
-        year.shouldHave(Condition.value("25"));
+        DataHelper.getNoLettersAndCharactersInYear();
         String enteredValue = year.getValue();
-        Assertions.assertTrue(enteredValue.matches("\\d{2}"));
+        Assertions.assertTrue(enteredValue.isEmpty());
     }
 
     @Test
     void testNoRussianLettersAllowedInOwnerPaymentForm() {
         LoginPage.paymentForm();
-        owner.setValue("ИВАН ПЕТРОВ");
+        owner.setValue(DataHelper.getInvalidOwner());
         String enteredText = owner.getValue();
         boolean containsRussianLetters = enteredText.matches(".*[а-яА-ЯёЁ].*");
         assertFalse(containsRussianLetters);
@@ -322,7 +315,7 @@ public class BankLoginTest {
     @Test
     void testUpperCaseInputInOwnerPaymentForm() {
         LoginPage.paymentForm();
-        owner.setValue("ivan petrov");
+        owner.setValue(DataHelper.getNoLowerCaseLettersInOwner());
         String enteredText = owner.getValue();
         assertEquals("IVAN PETROV", enteredText);
     }
@@ -330,210 +323,211 @@ public class BankLoginTest {
     @Test
     void testInvalidOwnerWithoutDashPaymentForm() {
         LoginPage.paymentForm();
-        cardNumber.setValue("4444 4444 4444 4441");
-        month.setValue("12");
-        year.setValue("25");
-        owner.setValue("IVANPETROV");
-        codeCVC.setValue("123");
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getNoDashInOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
         loginButton.click();
-        errorOwner.shouldHave(exactText("Неверный формат")).shouldBe(visible);
+        LoginPage.getErrorOwner1();
     }
 
     @Test
     void testNoFiguresOrSpecialCharactersInOwnerPaymentForm() {
         LoginPage.paymentForm();
-        owner.setValue("2D@B$5");
-        owner.shouldHave(Condition.value("DB"));
+        DataHelper.getNoFiguresAndCharactersInOwner();
         String enteredValue = owner.getValue();
-        Assertions.assertTrue(enteredValue.matches("\\d{2}"));
+        Assertions.assertTrue(enteredValue.isEmpty());
     }
 
     @Test
     void testNoBlankOwnerPaymentForm() {
         LoginPage.paymentForm();
-        cardNumber.setValue("4444 4444 4444 4441");
-        month.setValue("12");
-        year.setValue("25");
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
         owner.setValue("");
-        codeCVC.setValue("123");
+        codeCVC.setValue(DataHelper.getValidCVCCode());
         loginButton.click();
-        errorOwner.shouldHave(exactText("Поле обязательно для заполнения")).shouldBe(visible);
+        LoginPage.getErrorOwner2();
     }
 
     @Test
     void testInvalidCodeCVC2PaymentForm() {
         LoginPage.paymentForm();
-        cardNumber.setValue("4444 4444 4444 4441");
-        month.setValue("12");
-        year.setValue("25");
-        owner.setValue("IVAN PETROV");
-        codeCVC.setValue("12");
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getInvalidCVCCodeWith2Figures());
         loginButton.click();
-        errorCodeCVC.shouldHave(exactText("Неверный формат")).shouldBe(visible);
+        LoginPage.getErrorCVCCode();
     }
 
     @Test
     void testNoInput4FiguresInCodeCVCPaymentForm() {
         LoginPage.paymentForm();
-        codeCVC.setValue("111");
-        codeCVC.append("1");
-        String enteredValue = codeCVC.getValue().replaceAll("\\s", "").trim();
-        assert (enteredValue).length() == 3;
+        DataHelper.get4FiguresInCVCCode();
+        String enteredValue = codeCVC.getValue();
+        assert enteredValue.length() == 3;
     }
 
     @Test
     void testNoLettersOrSpecialCharactersInCodeCVCPaymentForm() {
         LoginPage.paymentForm();
-        codeCVC.setValue("2D@B$53");
-        codeCVC.shouldHave(Condition.value("253"));
+        DataHelper.getNoLettersAndCharactersInCVCCode();
         String enteredValue = codeCVC.getValue();
-        Assertions.assertTrue(enteredValue.matches("\\d{3}"));
+        Assertions.assertTrue(enteredValue.isEmpty());
     }
 
     @Test
     void testNoBlankCodeCVCPaymentForm() {
         LoginPage.paymentForm();
-        cardNumber.setValue("4444 4444 4444 4441");
-        month.setValue("12");
-        year.setValue("25");
-        owner.setValue("IVAN PETROV");
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
         codeCVC.setValue("");
         loginButton.click();
-        errorCodeCVC.shouldHave(exactText("Неверный формат")).shouldBe(visible);
+        LoginPage.getErrorCVCCode();
     }
 
 
 
     //Заполнение невалидными данными раздела "Кредит по данным карты"
 
-
-
-
     @Test
     void testNo15FiguresAllowedInCardNumberCreditForm() {
         LoginPage.creditForm();
-        cardNumber.setValue("4444 4444 4444 444");
-        month.setValue("12");
-        year.setValue("25");
-        owner.setValue("IVAN PETROV");
-        codeCVC.setValue("123");
+        cardNumber.setValue(DataHelper.get15FiguresCardNumber());
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
         loginButton.click();
-        errorCardNumber.shouldHave(exactText("Неверный формат")).shouldBe(visible);
+        LoginPage.getErrorCardNumber();
     }
 
     @Test
     void testNo17FiguresAllowedInCardNumberCreditForm() {
         LoginPage.creditForm();
-        cardNumber.setValue("1111 1111 1111 1111");
-        cardNumber.append("1");
-        String enteredValue = cardNumber.getValue().replaceAll("\\s", "").trim();
-        assert (enteredValue).length() == 16;
+        DataHelper.get17FiguresCardNumber();
+        String enteredValue = cardNumber.getValue();
+        Assertions.assertTrue(enteredValue.length() == 19);
     }
+
 
     @Test
     void testNoBlankCardNumberCreditForm() {
         LoginPage.creditForm();
         cardNumber.setValue("");
-        month.setValue("12");
-        year.setValue("25");
-        owner.setValue("IVAN PETROV");
-        codeCVC.setValue("123");
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
         loginButton.click();
-        errorCardNumber.shouldHave(exactText("Неверный формат")).shouldBe(visible);
-
+        LoginPage.getErrorCardNumber();
     }
 
     @Test
     void testNoLettersOrSpecialCharactersInCardNumberCreditForm() {
         LoginPage.creditForm();
-        cardNumber.setValue("1234ABCD@#$5678");
-        cardNumber.shouldHave(Condition.value("1234 5678"));
-        String enteredValue = cardNumber.getValue().replaceAll("\\s", "").trim();
-        Assertions.assertTrue(enteredValue.matches("\\d{8}"));
+        DataHelper.getNoLettersAndCharactersInCardNumber();
+        String enteredValue = cardNumber.getValue();
+        Assertions.assertTrue(enteredValue.isEmpty());
+    }
+    @Test
+    void testNotAccepted01_2025CreditForm() {
+        LoginPage.creditForm();
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.getMonth01_2025());
+        year.setValue(DataHelper.getYear01_2025());
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
+        loginButton.click();
+        LoginPage.getErrorMonth();
     }
 
     @Test
     void testNo00MonthAllowedCreditForm() {
         LoginPage.creditForm();
-        cardNumber.setValue("4444 4444 4444 4441");
-        month.setValue("00");
-        year.setValue("25");
-        owner.setValue("IVAN PETROV");
-        codeCVC.setValue("123");
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.get00Month());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
         loginButton.click();
-        errorMonth.shouldHave(exactText("Неверно указан срок действия карты")).shouldBe(visible);
+        LoginPage.getErrorMonth();
     }
 
     @Test
     void testNo13MonthAllowedCreditForm() {
         LoginPage.creditForm();
-        cardNumber.setValue("4444 4444 4444 4441");
-        month.setValue("13");
-        year.setValue("25");
-        owner.setValue("IVAN PETROV");
-        codeCVC.setValue("123");
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(String.valueOf(DataHelper.getInvalidMonth()));
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
         loginButton.click();
-        errorMonth.shouldHave(exactText("Неверно указан срок действия карты")).shouldBe(visible);
+        LoginPage.getErrorMonth();
     }
 
     @Test
     void testNoBlankMonthCreditForm() {
         LoginPage.creditForm();
-        cardNumber.setValue("4444 4444 4444 4441");
+        cardNumber.setValue(DataHelper.getValidCardNumber());
         month.setValue("");
-        year.setValue("25");
-        owner.setValue("IVAN PETROV");
-        codeCVC.setValue("123");
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
         loginButton.click();
-        errorMonth.shouldHave(exactText("Неверный формат")).shouldBe(visible);
+        LoginPage.getErrorMonth2();
     }
 
     @Test
     void testNoLettersOrSpecialCharactersInMonthCreditForm() {
         LoginPage.creditForm();
-        month.setValue("1D@B$2");
-        month.shouldHave(Condition.value("12"));
+        DataHelper.getNoLettersAndCharactersInMonth();
         String enteredValue = month.getValue();
-        Assertions.assertTrue(enteredValue.matches("\\d{2}"));
+        Assertions.assertTrue(enteredValue.isEmpty());
     }
 
     @Test
     void testInvalidYearCreditForm() {
         LoginPage.creditForm();
-        cardNumber.setValue("4444 4444 4444 4441");
-        month.setValue("12");
-        year.setValue("24");
-        owner.setValue("IVAN PETROV");
-        codeCVC.setValue("123");
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(DataHelper.getInvalidYear());
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
         loginButton.click();
-        errorYear.shouldHave(exactText("Истёк срок действия карты")).shouldBe(visible);
+        LoginPage.getErrorYear1();
     }
 
     @Test
     void testNoBlankYearCreditForm() {
         LoginPage.creditForm();
-        cardNumber.setValue("4444 4444 4444 4441");
-        month.setValue("12");
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.getValidMonth());
         year.setValue("");
-        owner.setValue("IVAN PETROV");
-        codeCVC.setValue("123");
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
         loginButton.click();
-        errorYear.shouldHave(exactText("Неверный формат")).shouldBe(visible);
+        LoginPage.getErrorYear2();
     }
 
     @Test
     void testNoLettersOrSpecialCharactersInYearCreditForm() {
         LoginPage.creditForm();
-        year.setValue("2D@B$5");
-        year.shouldHave(Condition.value("25"));
+        DataHelper.getNoLettersAndCharactersInYear();
         String enteredValue = year.getValue();
-        Assertions.assertTrue(enteredValue.matches("\\d{2}"));
+        Assertions.assertTrue(enteredValue.isEmpty());
     }
 
     @Test
     void testNoRussianLettersAllowedInOwnerCreditForm() {
         LoginPage.creditForm();
-        owner.setValue("ИВАН ПЕТРОВ");
+        owner.setValue(DataHelper.getInvalidOwner());
         String enteredText = owner.getValue();
         boolean containsRussianLetters = enteredText.matches(".*[а-яА-ЯёЁ].*");
         assertFalse(containsRussianLetters);
@@ -542,7 +536,7 @@ public class BankLoginTest {
     @Test
     void testUpperCaseInputInOwnerCreditForm() {
         LoginPage.creditForm();
-        owner.setValue("ivan petrov");
+        owner.setValue(DataHelper.getNoLowerCaseLettersInOwner());
         String enteredText = owner.getValue();
         assertEquals("IVAN PETROV", enteredText);
     }
@@ -550,77 +544,73 @@ public class BankLoginTest {
     @Test
     void testInvalidOwnerWithoutDashCreditForm() {
         LoginPage.creditForm();
-        cardNumber.setValue("4444 4444 4444 4441");
-        month.setValue("12");
-        year.setValue("25");
-        owner.setValue("IVANPETROV");
-        codeCVC.setValue("123");
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getNoDashInOwner());
+        codeCVC.setValue(DataHelper.getValidCVCCode());
         loginButton.click();
-        errorOwner.shouldHave(exactText("Неверный формат")).shouldBe(visible);
+        LoginPage.getErrorOwner1();
     }
 
     @Test
     void testNoFiguresOrSpecialCharactersInOwnerCreditForm() {
         LoginPage.creditForm();
-        owner.setValue("2D@B$5");
-        owner.shouldHave(Condition.value("DB"));
+        DataHelper.getNoFiguresAndCharactersInOwner();
         String enteredValue = owner.getValue();
-        Assertions.assertTrue(enteredValue.matches("\\d{2}"));
+        Assertions.assertTrue(enteredValue.isEmpty());
     }
-
 
     @Test
     void testNoBlankOwnerCreditForm() {
         LoginPage.creditForm();
-        cardNumber.setValue("4444 4444 4444 4441");
-        month.setValue("12");
-        year.setValue("25");
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
         owner.setValue("");
-        codeCVC.setValue("123");
+        codeCVC.setValue(DataHelper.getValidCVCCode());
         loginButton.click();
-        errorOwner.shouldHave(exactText("Поле обязательно для заполнения")).shouldBe(visible);
+        LoginPage.getErrorOwner2();
     }
 
     @Test
     void testInvalidCodeCVC2CreditForm() {
         LoginPage.creditForm();
-        cardNumber.setValue("4444 4444 4444 4441");
-        month.setValue("12");
-        year.setValue("25");
-        owner.setValue("IVAN PETROV");
-        codeCVC.setValue("12");
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
+        codeCVC.setValue(DataHelper.getInvalidCVCCodeWith2Figures());
         loginButton.click();
-        errorCodeCVC.shouldHave(exactText("Неверный формат")).shouldBe(visible);
+        LoginPage.getErrorCVCCode();
     }
 
     @Test
     void testNoInput4FiguresInCodeCVCCreditForm() {
         LoginPage.creditForm();
-        codeCVC.setValue("111");
-        codeCVC.append("1");
-        String enteredValue = codeCVC.getValue().replaceAll("\\s", "").trim();
-        assert (enteredValue).length() == 3;
+        DataHelper.get4FiguresInCVCCode();
+        String enteredValue = codeCVC.getValue();
+        assert enteredValue.length() == 3;
     }
 
     @Test
     void testNoLettersOrSpecialCharactersInCodeCVCCreditForm() {
         LoginPage.creditForm();
-        codeCVC.setValue("2D@B$53");
-        codeCVC.shouldHave(Condition.value("253"));
+        DataHelper.getNoLettersAndCharactersInCVCCode();
         String enteredValue = codeCVC.getValue();
-        Assertions.assertTrue(enteredValue.matches("\\d{3}"));
+        Assertions.assertTrue(enteredValue.isEmpty());
     }
 
     @Test
     void testNoBlankCodeCVCCreditForm() {
         LoginPage.creditForm();
-        cardNumber.setValue("4444 4444 4444 4441");
-        month.setValue("12");
-        year.setValue("25");
-        owner.setValue("IVAN PETROV");
+        cardNumber.setValue(DataHelper.getValidCardNumber());
+        month.setValue(DataHelper.getValidMonth());
+        year.setValue(String.valueOf(DataHelper.getValidYear()));
+        owner.setValue(DataHelper.getValidOwner());
         codeCVC.setValue("");
         loginButton.click();
-        errorCodeCVC.shouldHave(exactText("Неверный формат")).shouldBe(visible);
+        LoginPage.getErrorCVCCode();
     }
 
 
