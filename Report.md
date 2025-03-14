@@ -2,5 +2,5 @@
 
 На все упавшие тесты были заведены баг-репорты.
 
-![img.png](img.png)
-![img_1.png](img_1.png)
+![Allure Report.png](img.png)
+![Allure Report_part 2.png](img_1.png)
