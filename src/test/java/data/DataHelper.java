@@ -1,6 +1,7 @@
 package data;
 
 import com.github.javafaker.Faker;
+import page.LoginPage;
 
 import java.util.Locale;
 import static page.LoginPage.*;
@@ -53,62 +54,82 @@ public class DataHelper {
         return FAKER.numerify("###############");
     }
     public static void get17FiguresCardNumber() {
-        cardNumber.setValue(FAKER.finance().creditCard());
-        cardNumber.append("#");
-        cardNumber.getValue().replaceAll("\\s", "").trim();
+        LoginPage loginPage = new LoginPage();
+        loginPage.cardNumber.setValue(FAKER.finance().creditCard());
+        loginPage.cardNumber.append("#");
+        loginPage.cardNumber.getValue().replaceAll("\\s", "").trim();
     }
+
     public static void getNoLettersAndCharactersInCardNumber() {
-        cardNumber.setValue(FAKER.letterify("A@B#C*D").replaceAll("\\s", "").trim());
+        LoginPage loginPage = new LoginPage();
+        loginPage.cardNumber.setValue(FAKER.letterify("A@B#C*D").replaceAll("\\s", "").trim());
     }
 
     public static String get00Month() {
         return "00";
     }
+
     public static int getInvalidMonth() {
         return FAKER.number().numberBetween(13, 99);
     }
+
     public static void getNoLettersAndCharactersInMonth() {
-        month.setValue(FAKER.letterify("A@B#C*D").replaceAll("\\s", "").trim());
+        LoginPage loginPage = new LoginPage();
+        loginPage.month.setValue(FAKER.letterify("A@B#C*D").replaceAll("\\s", "").trim());
     }
+
     public static String getInvalidYear() {
         int number = FAKER.random().nextInt(0, 24);
         String formattedNumber = String.format("%02d", number);
         return formattedNumber;
     }
     public static void getNoLettersAndCharactersInYear() {
-        year.setValue(FAKER.letterify("A@B#C*D").replaceAll("\\s", "").trim());
+        LoginPage loginPage = new LoginPage();
+        loginPage.year.setValue(FAKER.letterify("A@B#C*D").replaceAll("\\s", "").trim());
     }
 
     public static String getInvalidOwner() {
         FAKER = new Faker(new Locale("ru"));
         return FAKER.name().fullName();
     }
+
     public static String getNoLowerCaseLettersInOwner() {
         return "ivan petrov";
     }
+
     public static String getNoDashInOwner() {
         return FAKER.name().firstName();
     }
+
     public static void getNoFiguresAndCharactersInOwner() {
-        owner.setValue(FAKER.letterify("1@2#3*4").replaceAll("\\s", "").trim());
+        LoginPage loginPage = new LoginPage();
+        loginPage.owner.setValue(FAKER.letterify("1@2#3*4").replaceAll("\\s", "").trim());
     }
+
     public static String getInvalidCVCCodeWith2Figures() {
         return FAKER.numerify("##");
     }
+
     public static void get4FiguresInCVCCode() {
-        codeCVC.setValue(FAKER.numerify("###"));
-        codeCVC.append("#");
-        codeCVC.getValue().replaceAll("\\s", "").trim();
+        LoginPage loginPage = new LoginPage();
+        loginPage.codeCVC.setValue(FAKER.numerify("###"));
+        loginPage.codeCVC.append("#");
+        loginPage.codeCVC.getValue().replaceAll("\\s", "").trim();
     }
+
     public static void getNoLettersAndCharactersInCVCCode() {
-        codeCVC.setValue(FAKER.letterify("A@B#C*D").replaceAll("\\s", "").trim());
+        LoginPage loginPage = new LoginPage();
+        loginPage.codeCVC.setValue(FAKER.letterify("A@B#C*D").replaceAll("\\s", "").trim());
     }
+
     public static String getMonth01_2025() {
         return "01";
     }
+
     public static String getYear01_2025() {
         return "25";
     }
+
 }
 
 
